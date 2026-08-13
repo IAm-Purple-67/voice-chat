@@ -1,0 +1,220 @@
+body {
+    font-family: 'Vazir', 'Tahoma', sans-serif;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    color: #eee;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    padding: 30px;
+    max-width: 700px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+h1 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 5px;
+    color: #00d2ff;
+}
+
+.subtitle {
+    text-align: center;
+    opacity: 0.7;
+    margin-top: 0;
+    font-size: 0.9rem;
+}
+
+.room-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.room-item {
+    background: rgba(255,255,255,0.08);
+    padding: 12px 18px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s;
+    border: 1px solid transparent;
+}
+
+.room-item:hover {
+    background: rgba(255,255,255,0.15);
+    border-color: #00d2ff;
+}
+
+.room-item button {
+    background: #00d2ff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.room-item button:hover {
+    transform: scale(1.05);
+    background: #00b8d4;
+}
+
+.create-room {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.create-room input {
+    flex: 1;
+    padding: 10px 15px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    font-size: 1rem;
+}
+
+.create-room input::placeholder {
+    color: rgba(255,255,255,0.5);
+}
+
+.create-room button {
+    background: #00e676;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.create-room button:hover {
+    transform: scale(1.05);
+    background: #00c853;
+}
+
+.room-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.room-header button {
+    background: #ff5252;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.room-header button:hover {
+    transform: scale(1.05);
+    background: #ff1744;
+}
+
+.call-controls {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.call-btn {
+    padding: 14px 40px;
+    border: none;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+#startCallBtn {
+    background: #ff4081;
+    color: #fff;
+}
+
+#startCallBtn:hover {
+    transform: scale(1.05);
+    background: #f50057;
+}
+
+#stopCallBtn {
+    background: #ff5252;
+    color: #fff;
+}
+
+#stopCallBtn:hover {
+    transform: scale(1.05);
+    background: #d50000;
+}
+
+.users-list {
+    background: rgba(255,255,255,0.05);
+    padding: 15px;
+    border-radius: 12px;
+    margin: 15px 0;
+}
+
+.users-list ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.users-list li {
+    background: rgba(0,210,255,0.2);
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+}
+
+.messages {
+    background: rgba(0,0,0,0.3);
+    height: 150px;
+    overflow-y: auto;
+    padding: 10px;
+    border-radius: 12px;
+    margin-top: 15px;
+    font-size: 0.9rem;
+}
+
+.messages p {
+    margin: 5px 0;
+    padding: 4px 10px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #00d2ff;
+    border-radius: 10px;
+}
