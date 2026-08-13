@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>گفتگوی صوتی گروهی</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🎙️ گفتگوی صوتی گروهی</h1>
+        <p class="subtitle">بدون ثبت‌نام - همه گروه‌ها عمومی</p>
+
+        <!-- صفحه اصلی: انتخاب گروه -->
+        <div id="lobby">
+            <h2>ساخت گروه جدید</h2>
+            <div class="create-room">
+                <input type="text" id="newRoomName" placeholder="نام گروه جدید...">
+                <button onclick="createRoom()">➕ ساخت گروه</button>
+            </div>
+
+            <h2>گروه‌های موجود</h2>
+            <div id="roomList" class="room-list">
+                <!-- گروه‌ها توسط جاوااسکریپت ساخته می‌شوند -->
+            </div>
+        </div>
+
+        <!-- صفحه چت صوتی (مخفی در ابتدا) -->
+        <div id="chatRoom" style="display:none;">
+            <div class="room-header">
+                <button onclick="leaveRoom()">⬅️ خروج</button>
+                <h2 id="currentRoomName">گروه</h2>
+                <span id="userCount">۰ کاربر</span>
+            </div>
+            
+            <div class="call-controls">
+                <button id="startCallBtn" onclick="startCall()" class="call-btn">🔴 شروع مکالمه</button>
+                <button id="stopCallBtn" onclick="stopCall()" class="call-btn" style="display:none;">⏹️ پایان مکالمه</button>
+            </div>
+
+            <div id="usersList" class="users-list">
+                <p>کاربران آنلاین:</p>
+                <ul id="onlineUsers"></ul>
+            </div>
+
+            <div id="messages" class="messages">
+                <!-- پیام‌های سیستم -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =====================================================
+        // کد کلاینت (JavaScript)
+        // =====================================================
+        
+        // لیست اتاق‌های پیش‌فرض
+        let rooms = [
+            "گروه ۱: گفتگوی آزاد",
+            "گروه ۲: موسیقی",
+            "گروه ۳: فیلم و سریال",
+            "گروه ۴: برنامه‌نویسی",
+            "گروه ۵: ورزش"
+        ];
+        
+        let ws = null;
+        let currentRoom = null;
+        let userId = Math.random().toString(36).substring(7);
+        let isInCall = false;
+        let localStream = null;
+        let peerConnections = {};
+
+        // ========== نمایش لیست گروه‌ها ==========
+        function renderRooms() {
+            const list = document.getElementById('roomList');
+            list.innerHTML = '';
+            rooms.forEach(room => {
+                const div = document.createElement('div');
+                div.className = 'room-item';
+                div.innerHTML = `
+                    <span>${room}</span>
+                    <button onclick="joinRoom('${room}')">ورود</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // ========== ساخت گروه جدید ==========
+        function createRoom() {
+            const input = document.getElementById('newRoomName');
+            const name = input.value.trim();
+            if (name && !rooms.includes(name)) {
+                rooms.push(name);
+                renderRooms();
+                input.value = '';
+                alert(`گروه "${name}" ساخته شد!`);
+            } else if (rooms.includes(name)) {
+                alert('این گروه قبلاً وجود دارد!');
+            } else {
+                alert('لطفاً یک نام وارد کنید.');
+            }
+        }
+
+        // ========== ورود به گروه ==========
+        function joinRoom(roomName) {
+            currentRoom = roomName;
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('chatRoom').style.display = 'block';
+            document.getElementById('currentRoomName').textContent = roomName;
+            
+            // اتصال به WebSocket
+            connectWebSocket(roomName);
+        }
+
+        // ========== اتصال WebSocket ==========
+        function connectWebSocket(room) {
+            // استفاده از WebSocket سرور روی پورت 8765
+            ws = new WebSocket(`ws://localhost:8765`);
+            
+            ws.onopen = () => {
+                addMessage('✅ به سرور متصل شدید');
+                // ارسال درخواست ورود به اتاق
+                ws.send(JSON.stringify({
+                    action: 'join_room',
+                    room: room
+                }));
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleWebSocketMessage(data);
+            };
+            
+            ws.onerror = (error) => {
+                addMessage('❌ خطا در اتصال: ' + error);
+            };
+            
+            ws.onclose = () => {
+                addMessage('🔌 ارتباط قطع شد');
+            };
+        }
+
+        // ========== مدیریت پیام‌های WebSocket ==========
+        function handleWebSocketMessage(data) {
+            switch(data.type) {
+                case 'user_joined':
+                    addMessage(`👤 ${data.message}`);
+                    updateUserCount(1);
+                    break;
+                    
+                case 'user_left':
+                    addMessage(`👋 ${data.message}`);
+                    updateUserCount(-1);
+                    break;
+                    
+                case 'room_users':
+                    addMessage(`👥 ${data.users.length} کاربر در گروه هستند`);
+                    updateUserList(data.users);
+                    break;
+                    
+                case 'signal':
+                    // دریافت سیگنال WebRTC از کاربر دیگر
+                    handleSignal(data.from, data.data);
+                    break;
+                    
+                default:
+                    console.log('پیام ناشناس:', data);
+            }
+        }
+
+        // ========== خروج از گروه ==========
+        function leaveRoom() {
+            if (ws) {
+                ws.send(JSON.stringify({
+                    action: 'leave'
+                }));
+                ws.close();
+            }
+            stopCall();
+            currentRoom = null;
+            document.getElementById('chatRoom').style.display = 'none';
+            document.getElementById('lobby').style.display = 'block';
+            renderRooms();
+        }
+
+        // ========== مدیریت کاربران ==========
+        function updateUserCount(change) {
+            const countEl = document.getElementById('userCount');
+            let current = parseInt(countEl.textContent) || 0;
+            current += change;
+            countEl.textContent = current + ' کاربر';
+        }
+
+        function updateUserList(users) {
+            const list = document.getElementById('onlineUsers');
+            list.innerHTML = '';
+            users.forEach(user => {
+                const li = document.createElement('li');
+                li.textContent = `🟢 ${user.id}`;
+                list.appendChild(li);
+            });
+        }
+
+        // ========== پیام‌های سیستم ==========
+        function addMessage(text) {
+            const container = document.getElementById('messages');
+            const p = document.createElement('p');
+            p.textContent = text;
+            container.appendChild(p);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // ========== WebRTC: شروع مکالمه صوتی ==========
+        async function startCall() {
+            if (isInCall) return;
+            
+            try {
+                // دریافت دسترسی به میکروفون
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                isInCall = true;
+                
+                document.getElementById('startCallBtn').style.display = 'none';
+                document.getElementById('stopCallBtn').style.display = 'inline-block';
+                addMessage('🎤 میکروفون روشن شد');
+                
+                // در اینجا باید WebRTC ارتباط برقرار کنید
+                // اما برای سادگی، فقط پیام می‌دهیم
+                // برای پیاده‌سازی کامل WebRTC باید کد بیشتری نوشت
+                
+            } catch (err) {
+                addMessage('❌ دسترسی به میکروفون ممکن نیست: ' + err.message);
+            }
+        }
+
+        // ========== پایان مکالمه ==========
+        function stopCall() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            isInCall = false;
+            document.getElementById('startCallBtn').style.display = 'inline-block';
+            document.getElementById('stopCallBtn').style.display = 'none';
+            addMessage('⏹️ مکالمه تمام شد');
+        }
+
+        // ========== مدیریت سیگنال‌های WebRTC ==========
+        function handleSignal(from, signalData) {
+            // اینجا باید سیگنال‌های WebRTC را پردازش کنید
+            console.log(`📡 سیگنال از ${from}:`, signalData);
+            addMessage(`📡 سیگنال از کاربر ${from} دریافت شد`);
+        }
+
+        // ========== بارگذاری اولیه ==========
+        window.onload = function() {
+            renderRooms();
+            addMessage('👋 به گفتگوی صوتی خوش آمدید!');
+        };
+    </script>
+</body>
+</html>
